@@ -42,3 +42,4 @@ L’implémentation de ce système de gestion de flotte permettra à l’entrepr
 
 ## Phase de conception : 
 <a href="https://drive.google.com/file/d/1xJNuM4RItAFEoX4M-2BJ3xnQZ5xqC77Z/view?usp=sharing">Diagramme de conception</a>
+<a href="[https://drive.google.com/file/d/1xJNuM4RItAFEoX4M-2BJ3xnQZ5xqC77Z/view?usp=sharing](https://www.figma.com/proto/FHK3YHVYJwAMyNVnWYuvYF/Proget-de-gestion-de-flotte-automobile?node-id=1-3&node-type=frame&t=V2cBFZecKndNpDRk-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1)">Design Figma</a>
