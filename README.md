@@ -41,5 +41,5 @@ Pour répondre à ces besoins, l'entreprise mettra en place un **système de ges
 L’implémentation de ce système de gestion de flotte permettra à l’entreprise de centraliser toutes les opérations liées aux véhicules municipaux, d’augmenter l'efficacité de la gestion des ressources, de réduire les coûts d’exploitation, et d’assurer la qualité des services municipaux grâce à des missions planifiées et sûres.
 
 ## Phase de conception : 
-<a href="https://drive.google.com/file/d/1xJNuM4RItAFEoX4M-2BJ3xnQZ5xqC77Z/view?usp=sharing">Diagramme de conception</a> <br>
+<a href="https://drive.google.com/file/d/1xJNuM4RItAFEoX4M-2BJ3xnQZ5xqC77Z/view?usp=sharing">Diagramme de conception</a> <br><br>
 <a href="https://www.figma.com/proto/FHK3YHVYJwAMyNVnWYuvYF/Proget-de-gestion-de-flotte-automobile?node-id=1-3&node-type=frame&t=V2cBFZecKndNpDRk-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1">Design Figma</a>
