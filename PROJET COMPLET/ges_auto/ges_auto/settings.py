@@ -40,10 +40,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'account',
     'dashboard',
-    'pages',
     'usermanager',
     'vehiculemanager',
     'rapportmanager',
+    'trajetmanager',
 ]
 
 MIDDLEWARE = [

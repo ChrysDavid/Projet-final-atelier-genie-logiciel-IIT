@@ -27,8 +27,7 @@ urlpatterns = [
     path('', include('usermanager.urls')),
     path('', include('vehiculemanager.urls')),
     path('', include('rapportmanager.urls')),
-    path('pages/', include('pages.urls')),
-
+    path('', include('trajetmanager.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

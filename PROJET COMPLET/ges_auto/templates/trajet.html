@@ -1,381 +1,474 @@
-{% extends 'bases/base.html '%}
-
+{% extends 'bases/base.html' %}
 {% load static %}
 
 {% block content %}
-
-<!-- endbuild -->
-
+<!-- CSS -->
 <link rel="stylesheet" href="{% static 'assets/vendor/libs/mapbox-gl/mapbox-gl.css' %}" />
-
-<!-- Page CSS -->
-    
+<link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
 <link rel="stylesheet" href="{% static 'assets/vendor/css/pages/app-logistics-fleet.css' %}" />
 
-
-
-<!-- Content -->
 <div class="container-xxl flex-grow-1 container-p-y">
+    <!-- Header avec bouton d'ajout -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Gestion des Trajets</h5>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#trajetModal">
+                        <i class="bx bx-plus me-1"></i>Nouveau Trajet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-
-
-
+    <!-- Carte principale -->
     <div class="card overflow-hidden">
-        <!-- Map Menu Wrapper -->
         <div class="d-flex app-logistics-fleet-wrapper">
-            <!-- Map Menu Button when screen is < md -->
+            <!-- Bouton menu mobile -->
             <div class="flex-shrink-0 position-fixed m-6 d-md-none w-auto z-1">
                 <button class="btn btn-icon btn-white btn-white-dark-variant z-2" data-bs-toggle="sidebar"
-                    data-overlay="" data-target="#app-logistics-fleet-sidebar"><i
-                        class="icon-base bx bx-menu icon-md"></i></button>
+                    data-overlay="" data-target="#app-logistics-fleet-sidebar">
+                    <i class="bx bx-menu"></i>
+                </button>
             </div>
 
-            <!-- Map Menu -->
+            <!-- Sidebar des trajets -->
             <div class="app-logistics-fleet-sidebar col h-100" id="app-logistics-fleet-sidebar">
-                <div class="card-header border-0 pt-6 pb-1 d-flex justify-content-between">
-                    <h5 class="mb-0 card-title">Fleet</h5>
-                    <!-- Sidebar close button -->
-                    <i class="icon-base bx bx-x icon-xs cursor-pointer close-sidebar d-md-none d-block btn btn-sm btn-icon p-0"
-                        data-bs-toggle="sidebar" data-overlay data-target="#app-logistics-fleet-sidebar"></i>
+                <div class="card-header border-0 pt-4 pb-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Liste des Trajets</h5>
+                        <button class="d-md-none btn btn-icon btn-sm btn-text-secondary rounded-pill"
+                            data-bs-toggle="sidebar" data-overlay data-target="#app-logistics-fleet-sidebar">
+                            <i class="bx bx-x"></i>
+                        </button>
+                    </div>
                 </div>
-                <!-- Sidebar when screen < md -->
+
                 <div class="card-body p-0 logistics-fleet-sidebar-body">
-                    <!-- Menu Accordion -->
-                    <div class="accordion py-2 px-1" id="fleet" data-bs-toggle="sidebar" data-overlay
-                        data-target="#app-logistics-fleet-sidebar">
-                        <!-- Fleet 1 -->
-                        <div class="accordion-item border-0 active mb-0 shadow-none" id="fl-1">
-                            <div class="accordion-header" id="fleetOne">
-                                <div role="button" class="accordion-button shadow-none align-items-center"
-                                    data-bs-toggle="collapse" data-bs-target="#fleet1" aria-expanded="true"
-                                    aria-controls="fleet1">
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-wrapper">
-                                            <div class="avatar me-4">
-                                                <span
-                                                    class="avatar-initial rounded-circle bg-label-secondary w-px-40 h-px-40"><i
-                                                        class="icon-base bx bx-car icon-lg"></i></span>
-                                            </div>
+                    <div class="accordion" id="trajetsAccordion">
+                        {% for trajet in trajets %}
+                        <div class="accordion-item border-0 active mb-1" id="trajet-{{ trajet.id }}">
+                            <div class="accordion-header">
+                                <button class="accordion-button shadow-none" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#trajetCollapse{{ trajet.id }}"
+                                    onclick="focusTrajet({{ trajet.id }})">
+                                    <div class="d-flex align-items-center flex-grow-1">
+                                        <div class="avatar me-3">
+                                            <span class="avatar-initial rounded-circle bg-label-primary">
+                                                <i class="bx bx-car"></i>
+                                            </span>
                                         </div>
-                                        <span class="d-flex flex-column gap-1">
-                                            <span class="text-heading">VOL-342808</span>
-                                            <span class="text-body">Chelsea, NY, USA</span>
+                                        <div class="me-3">
+                                            <h6 class="mb-0">{{ trajet.lieu_depart }} → {{ trajet.destination }}</h6>
+                                            <small class="text-muted">
+                                                {{ trajet.date_depart|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-label-{{ trajet.status_color }} ms-auto">
+                                            {{ trajet.status }}
                                         </span>
                                     </div>
-                                </div>
+                                </button>
                             </div>
-                            <div id="fleet1" class="accordion-collapse collapse show" data-bs-parent="#fleet">
-                                <div class="accordion-body pt-5 pb-0">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <h6 class="fw-normal mb-1">Delivery Process</h6>
-                                        <p class="text-body mb-1">88%</p>
+
+                            <div id="trajetCollapse{{ trajet.id }}" class="accordion-collapse collapse"
+                                data-bs-parent="#trajetsAccordion">
+                                <div class="accordion-body pt-3">
+                                    <div class="mb-3">
+                                        <div class="progress mb-2" style="height: 6px;">
+                                            <div class="progress-bar" role="progressbar"
+                                                style="width: {{ trajet.progress }}%"
+                                                aria-valuenow="{{ trajet.progress }}" aria-valuemin="0"
+                                                aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Progression : {{ trajet.progress }}%</small>
                                     </div>
-                                    <div class="progress">
-                                        <div class="progress-bar" role="progressbar" style="width: 88%;"
-                                            aria-valuenow="88" aria-valuemin="0" aria-valuemax="100"></div>
+
+                                    <div class="mb-3">
+                                        <h6 class="mb-2">Détails du trajet</h6>
+                                        <div class="d-flex flex-column gap-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Distance :</span>
+                                                <span>{{ trajet.distance }} km</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Véhicule :</span>
+                                                <span>{{ trajet.vehicule }}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Personnel :</span>
+                                                <span>{{ trajet.personnel }}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <ul class="timeline ps-4 mt-6 mb-2">
-                                        <li class="timeline-item ps-6 pb-3 border-left-dashed">
-                                            <span
-                                                class="timeline-indicator-advanced timeline-indicator-success border-0 shadow-none">
-                                                <i class="icon-base bx bx-check-circle"></i>
-                                            </span>
-                                            <div class="timeline-event ps-0 pb-0">
-                                                <div class="timeline-header">
-                                                    <small class="text-success text-uppercase">tracking number
-                                                        created</small>
-                                                </div>
-                                                <h6 class="my-50">Veronica Herman</h6>
-                                                <small class="text-body">Sep 01, 7:53 AM</small>
-                                            </div>
-                                        </li>
-                                        <li class="timeline-item ps-6 pb-3 border-left-dashed">
-                                            <span
-                                                class="timeline-indicator-advanced timeline-indicator-success border-0 shadow-none">
-                                                <i class="icon-base bx bx-check-circle"></i>
-                                            </span>
-                                            <div class="timeline-event ps-0 pb-0">
-                                                <div class="timeline-header">
-                                                    <small class="text-success text-uppercase">out for delivery</small>
-                                                </div>
-                                                <h6 class="my-50">Veronica Herman</h6>
-                                                <small class="text-body">Sep 03, 8:02 AM</small>
-                                            </div>
-                                        </li>
-                                        <li class="timeline-item ps-6 border-transparent">
-                                            <span
-                                                class="timeline-indicator-advanced timeline-indicator-primary border-0 shadow-none">
-                                                <i class="icon-base bx bx-map mt-1"></i>
-                                            </span>
-                                            <div class="timeline-event ps-0 pb-0">
-                                                <div class="timeline-header">
-                                                    <small
-                                                        class="text-primary text-uppercase fw-medium">arriving</small>
-                                                </div>
-                                                <h6 class="my-50">Veronica Herman</h6>
-                                                <small class="text-body">Sep 04, 8:18 AM</small>
-                                            </div>
-                                        </li>
-                                    </ul>
+
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-primary flex-grow-1"
+                                            onclick="editTrajet({{ trajet.id }})">
+                                            <i class="bx bx-edit me-1"></i>Modifier
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteTrajet({{ trajet.id }})">
+                                            <i class="bx bx-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <!-- Fleet 2 -->
-                        <div class="accordion-item border-0 mt-0 mb-0 shadow-none" id="fl-2">
-                            <div class="accordion-header" id="fleetTwo">
-                                <div role="button" class="accordion-button collapsed shadow-none align-items-center"
-                                    data-bs-toggle="collapse" data-bs-target="#fleet2" aria-expanded="true"
-                                    aria-controls="fleet2">
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-wrapper">
-                                            <div class="avatar me-4">
-                                                <span
-                                                    class="avatar-initial rounded-circle bg-label-secondary w-px-40 h-px-40"><i
-                                                        class="icon-base bx bx-car icon-lg"></i></span>
-                                            </div>
-                                        </div>
-                                        <span class="d-flex flex-column gap-1">
-                                            <span class="text-heading">VOL-954784</span>
-                                            <span class="text-body">Lincoln Harbor, NY, USA</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="fleet2" class="accordion-collapse collapse" data-bs-parent="#fleet">
-                                <div class="accordion-body pt-4 pb-0">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <h6 class="fw-normal mb-1">Delivery Process</h6>
-                                        <p class="text-body mb-1">100%</p>
-                                    </div>
-                                    <div class="progress">
-                                        <div class="progress-bar" role="progressbar" style="width: 100%;"
-                                            aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                    <ul class="timeline ps-4 mt-6 mb-2">
-                                        <li class="timeline-item ps-6 pb-3 border-left-dashed">
-                                            <span
-                                                class="timeline-indicator-advanced timeline-indicator-success border-0 shadow-none">
-                                                <i class="icon-base bx bx-check-circle"></i>
-                                            </span>
-                                            <div class="timeline-event ps-0 pb-0">
-                                                <div class="timeline-header">
-                                                    <small class="text-success text-uppercase">tracking number
-                                                        created</small>
-                                                </div>
-                                                <h6 class="my-50">Myrtle Ullrich</h6>
-                                                <small class="text-body">Sep 01, 7:53 AM</small>
-                                            </div>
-                                        </li>
-                                        <li class="timeline-item ps-6 pb-3 border-left-dashed">
-                                            <span
-                                                class="timeline-indicator-advanced timeline-indicator-success border-0 shadow-none">
-                                                <i class="icon-base bx bx-check-circle"></i>
-                                            </span>
-                                            <div class="timeline-event ps-0 pb-0">
-                                                <div class="timeline-header">
-                                                    <small class="text-success text-uppercase">out for delivery</small>
-                                                </div>
-                                                <h6 class="my-50">Myrtle Ullrich</h6>
-                                                <small class="text-body">Sep 03, 8:02 AM</small>
-                                            </div>
-                                        </li>
-                                        <li class="timeline-item ps-6 border-transparent">
-                                            <span
-                                                class="timeline-indicator-advanced timeline-indicator-primary border-0 shadow-none">
-                                                <i class="icon-base bx bx-map mt-1"></i>
-                                            </span>
-                                            <div class="timeline-event ps-0 pb-0">
-                                                <div class="timeline-header">
-                                                    <small class="text-primary text-uppercase fw-medium">arrived</small>
-                                                </div>
-                                                <h6 class="my-50">Myrtle Ullrich</h6>
-                                                <small class="text-body">Sep 04, 8:18 AM</small>
-                                            </div>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Fleet 3 -->
-                        <div class="accordion-item border-0 mt-0 mb-0 shadow-none" id="fl-3">
-                            <div class="accordion-header" id="fleetThree">
-                                <div role="button" class="accordion-button collapsed shadow-none align-items-center"
-                                    data-bs-toggle="collapse" data-bs-target="#fleet3" aria-expanded="true"
-                                    aria-controls="fleet3">
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-wrapper">
-                                            <div class="avatar me-4">
-                                                <span
-                                                    class="avatar-initial rounded-circle bg-label-secondary w-px-40 h-px-40"><i
-                                                        class="icon-base bx bx-car icon-lg"></i></span>
-                                            </div>
-                                        </div>
-                                        <span class="d-flex flex-column gap-1">
-                                            <span class="text-heading">VOL-342808</span>
-                                            <span class="text-body">Midtown East, NY, USA</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="fleet3" class="accordion-collapse collapse" data-bs-parent="#fleet">
-                                <div class="accordion-body pt-4 pb-0">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <h6 class="fw-normal mb-1">Delivery Process</h6>
-                                        <p class="text-body mb-1">60%</p>
-                                    </div>
-                                    <div class="progress">
-                                        <div class="progress-bar" role="progressbar" style="width: 60%;"
-                                            aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                    <ul class="timeline ps-4 mt-6 mb-2">
-                                        <li class="timeline-item ps-6 pb-3 border-left-dashed">
-                                            <span
-                                                class="timeline-indicator-advanced timeline-indicator-success border-0 shadow-none">
-                                                <i class="icon-base bx bx-check-circle"></i>
-                                            </span>
-                                            <div class="timeline-event ps-0 pb-0">
-                                                <div class="timeline-header">
-                                                    <small class="text-success text-uppercase">tracking number
-                                                        created</small>
-                                                </div>
-                                                <h6 class="my-50">Barry Schowalter</h6>
-                                                <small class="text-body">Sep 01, 7:53 AM</small>
-                                            </div>
-                                        </li>
-                                        <li class="timeline-item ps-6 pb-3 border-left-dashed">
-                                            <span
-                                                class="timeline-indicator-advanced timeline-indicator-success border-0 shadow-none">
-                                                <i class="icon-base bx bx-check-circle"></i>
-                                            </span>
-                                            <div class="timeline-event ps-0 pb-0">
-                                                <div class="timeline-header">
-                                                    <small class="text-success text-uppercase">out for delivery</small>
-                                                </div>
-                                                <h6 class="my-50">Barry Schowalter</h6>
-                                                <small class="text-body">Sep 03, 8:02 AM</small>
-                                            </div>
-                                        </li>
-                                        <li class="timeline-item ps-6 border-transparent">
-                                            <span
-                                                class="timeline-indicator-advanced timeline-indicator-secondary border-0 shadow-none">
-                                                <i class="icon-base bx bx-map mt-1"></i>
-                                            </span>
-                                            <div class="timeline-event ps-0 pb-0">
-                                                <div class="timeline-header">
-                                                    <small
-                                                        class="text-secondary text-uppercase fw-medium">arriving</small>
-                                                </div>
-                                                <h6 class="my-50">Barry Schowalter</h6>
-                                                <small class="text-body">Sep 04, 8:18 AM</small>
-                                            </div>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Fleet 4 -->
-                        <div class="accordion-item border-0 mt-0 mb-4 shadow-none" id="fl-4">
-                            <div class="accordion-header" id="fleetFour">
-                                <div role="button" class="accordion-button collapsed shadow-none align-items-center"
-                                    data-bs-toggle="collapse" data-bs-target="#fleet4" aria-expanded="true"
-                                    aria-controls="fleet4">
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-wrapper">
-                                            <div class="avatar me-4">
-                                                <span
-                                                    class="avatar-initial rounded-circle bg-label-secondary w-px-40 h-px-40"><i
-                                                        class="icon-base bx bx-car icon-lg"></i></span>
-                                            </div>
-                                        </div>
-                                        <span class="d-flex flex-column gap-1">
-                                            <span class="text-heading">VOL-343908</span>
-                                            <span class="text-body">Hoboken, NY, USA</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="fleet4" class="accordion-collapse collapse" data-bs-parent="#fleet">
-                                <div class="accordion-body pt-4 pb-0">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <h6 class="fw-normal mb-1">Delivery Process</h6>
-                                        <p class="text-body mb-1">28%</p>
-                                    </div>
-                                    <div class="progress">
-                                        <div class="progress-bar" role="progressbar" style="width: 28%;"
-                                            aria-valuenow="28" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                    <ul class="timeline ps-4 mt-6">
-                                        <li class="timeline-item ps-6 pb-3 border-left-dashed">
-                                            <span
-                                                class="timeline-indicator-advanced timeline-indicator-success border-0 shadow-none">
-                                                <i class="icon-base bx bx-check-circle"></i>
-                                            </span>
-                                            <div class="timeline-event ps-0 pb-0">
-                                                <div class="timeline-header">
-                                                    <small class="text-success text-uppercase">tracking number
-                                                        created</small>
-                                                </div>
-                                                <h6 class="my-50">Helen Jacobs</h6>
-                                                <small class="text-body">Sep 01, 7:53 AM</small>
-                                            </div>
-                                        </li>
-                                        <li class="timeline-item ps-6 pb-3 border-left-dashed">
-                                            <span
-                                                class="timeline-indicator-advanced timeline-indicator-secondary border-0 shadow-none">
-                                                <i class="icon-base bx bx-check-circle"></i>
-                                            </span>
-                                            <div class="timeline-event ps-0 pb-0">
-                                                <div class="timeline-header">
-                                                    <small class="text-secondary text-uppercase fw-medium">out for
-                                                        delivery</small>
-                                                </div>
-                                                <h6 class="my-50">Helen Jacobs</h6>
-                                                <small class="text-body">Sep 03, 8:02 AM</small>
-                                            </div>
-                                        </li>
-                                        <li class="timeline-item ps-6 border-transparent">
-                                            <span
-                                                class="timeline-indicator-advanced timeline-indicator-secondary border-0 shadow-none">
-                                                <i class="icon-base bx bx-map mt-1"></i>
-                                            </span>
-                                            <div class="timeline-event ps-0 pb-0">
-                                                <div class="timeline-header">
-                                                    <small
-                                                        class="text-secondary text-uppercase fw-medium">arriving</small>
-                                                </div>
-                                                <h6 class="my-50">Helen Jacobs</h6>
-                                                <small class="text-body">Sep 04, 8:18 AM</small>
-                                            </div>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
 
-            <!-- Mapbox Map container -->
+            <!-- Container carte -->
             <div class="col h-100 map-container">
-                <!-- Map -->
                 <div id="map" class="w-100 h-100"></div>
             </div>
-
-            <!-- Overlay Hidden -->
-            <div class="app-overlay d-none"></div>
         </div>
     </div>
-
 </div>
-<!-- / Content -->
 
+<!-- Modal Trajet -->
+<div class="modal fade" id="trajetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="trajetModalTitle">Nouveau Trajet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="trajetForm" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="trajet_id" id="trajetId">
 
- <!-- Vendors JS -->
- <script src="{% static 'assets/vendor/libs/mapbox-gl/mapbox-gl.js' %}"></script>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Date de départ</label>
+                            {{ form.date_depart }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Date d'arrivée</label>
+                            {{ form.date_arrivee }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Lieu de départ</label>
+                            {{ form.lieu_depart }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Destination</label>
+                            {{ form.destination }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Motif</label>
+                            {{ form.motif }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Véhicule</label>
+                            {{ form.vehicule }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Personnel</label>
+                            {{ form.personnel }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Distance (km)</label>
+                            {{ form.distance }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Coût estimé (€)</label>
+                            {{ form.cout_estime }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Statut</label>
+                            {{ form.status }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="saveTrajet()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
 
+<!-- Scripts -->
+<script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
+<script src="{% static 'assets/vendor/libs/mapbox-gl/mapbox-gl.js' %}"></script>
+<script>
+    const trajets = {{ trajets_json| safe }};
+    let map;
+    let markers = {};
 
-<!-- Page JS -->
-<script src="{% static 'assets/js/app-logistics-fleet.js' %}"></script>
+    // Initialisation de la carte
+    function initMap() {
+        mapboxgl.accessToken = "pk.eyJ1IjoiY2xldmlzaW9uLWRldiIsImEiOiJjbTN5Y28waW4xZzVsMmpxdHNpbmk1bHpmIn0.i_N-shiuMcRnSQGwaT9nmA";
 
+        map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/light-v9',
+            center: [2.3522, 48.8566], // Paris
+            zoom: 11
+        });
+
+        map.on('load', () => {
+            loadTrajets();
+        });
+    }
+
+    // Chargement des trajets sur la carte
+    function loadTrajets() {
+        trajets.forEach(trajet => {
+            addTrajetMarker(trajet);
+        });
+
+        // Ajuster la vue pour voir tous les marqueurs
+        if (trajets.length > 0) {
+            const bounds = new mapboxgl.LngLatBounds();
+            trajets.forEach(trajet => {
+                bounds.extend([trajet.depart_lon, trajet.depart_lat]);
+                bounds.extend([trajet.destination_lon, trajet.destination_lat]);
+            });
+            map.fitBounds(bounds, { padding: 50 });
+        }
+    }
+
+    // Ajout d'un marqueur pour un trajet
+    function addTrajetMarker(trajet) {
+        // Marqueur de départ
+        const el = document.createElement('div');
+        el.className = 'marker';
+        el.innerHTML = `<i class="bx bx-car text-primary" style="font-size: 2rem;"></i>`;
+
+        const marker = new mapboxgl.Marker(el)
+            .setLngLat([trajet.depart_lon, trajet.depart_lat])
+            .setPopup(new mapboxgl.Popup({ offset: 25 })
+                .setHTML(`
+                <h6>${trajet.lieu_depart} → ${trajet.destination}</h6>
+                <p class="mb-1">Date: ${new Date(trajet.date_depart).toLocaleDateString()}</p>
+                <p class="mb-0">Distance: ${trajet.distance} km</p>
+            `))
+            .addTo(map);
+
+        markers[trajet.id] = marker;
+
+        // Ligne entre départ et destination
+        map.addLayer({
+            id: `route-${trajet.id}`,
+            type: 'line',
+            source: {
+                type: 'geojson',
+                data: {
+                    type: 'Feature',
+                    properties: {},
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: [
+                            [trajet.depart_lon, trajet.depart_lat],
+                            [trajet.destination_lon, trajet.destination_lat]
+                        ]
+                    }
+                }
+            },
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            paint: {
+                'line-color': '#007bff',
+                'line-width': 2,
+                'line-dasharray': [2, 2]
+            }
+        });
+    }
+
+    // Focus sur un trajet
+    function focusTrajet(trajetId) {
+        const trajet = trajets.find(t => t.id === trajetId);
+        if (trajet && markers[trajetId]) {
+            map.flyTo({
+                center: [trajet.depart_lon, trajet.depart_lat],
+                zoom: 14,
+                essential: true
+            });
+            markers[trajetId].togglePopup();
+        }
+    }
+
+    // Édition d'un trajet
+    function editTrajet(trajetId) {
+        const trajet = trajets.find(t => t.id === trajetId);
+        if (trajet) {
+            document.getElementById('trajetModalTitle').textContent = 'Modifier le Trajet';
+            document.getElementById('trajetId').value = trajet.id;
+
+            // Remplir le formulaire
+            Object.keys(trajet).forEach(key => {
+                const input = document.querySelector(`[name="${key}"]`);
+                if (input) {
+                    if (input.type === 'datetime-local') {
+                        input.value = new Date(trajet[key]).toISOString().slice(0, 16);
+                    } else {
+                        input.value = trajet[key];
+                    }
+                }
+            });
+
+            $('#trajetModal').modal('show');
+        }
+    }
+
+    // Sauvegarde d'un trajet
+    async function saveTrajet() {
+        const form = document.getElementById('trajetForm');
+        const formData = new FormData(form);
+        const trajetId = formData.get('trajet_id');
+
+        try {
+            const response = await fetch(trajetId ?
+                `/trajet/update/${trajetId}/` :
+                '/trajet/create/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Une erreur est survenue');
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue lors de la sauvegarde');
+        }
+    }
+
+    // Suppression d'un trajet
+    async function deleteTrajet(trajetId) {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer ce trajet ?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/trajet/delete/${trajetId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Une erreur est survenue lors de la suppression');
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue lors de la suppression');
+        }
+    }
+
+    // Géolocalisation
+    function getCoordinatesFromAddress(address) {
+        return new Promise((resolve, reject) => {
+            fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxgl.accessToken}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.features && data.features.length > 0) {
+                        resolve(data.features[0].center);
+                    } else {
+                        reject('Adresse non trouvée');
+                    }
+                })
+                .catch(reject);
+        });
+    }
+
+    // Calcul de la distance entre deux points
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Rayon de la Terre en km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    // Mise à jour automatique de la distance
+    async function updateDistance() {
+        const departInput = document.querySelector('[name="lieu_depart"]');
+        const destinationInput = document.querySelector('[name="destination"]');
+        const distanceInput = document.querySelector('[name="distance"]');
+
+        if (departInput.value && destinationInput.value) {
+            try {
+                const [departCoords, destCoords] = await Promise.all([
+                    getCoordinatesFromAddress(departInput.value),
+                    getCoordinatesFromAddress(destinationInput.value)
+                ]);
+
+                const distance = calculateDistance(
+                    departCoords[1], departCoords[0],
+                    destCoords[1], destCoords[0]
+                );
+
+                distanceInput.value = Math.round(distance * 10) / 10;
+            } catch (error) {
+                console.error('Erreur lors du calcul de la distance:', error);
+            }
+        }
+    }
+
+    // Gestionnaires d'événements
+    document.addEventListener('DOMContentLoaded', function () {
+        initMap();
+
+        // Event listeners pour le calcul automatique de la distance
+        const departInput = document.querySelector('[name="lieu_depart"]');
+        const destinationInput = document.querySelector('[name="destination"]');
+
+        if (departInput && destinationInput) {
+            departInput.addEventListener('change', updateDistance);
+            destinationInput.addEventListener('change', updateDistance);
+        }
+
+        // Perfect Scrollbar pour la sidebar
+        if (typeof PerfectScrollbar !== 'undefined') {
+            const sidebarBody = document.querySelector('.logistics-fleet-sidebar-body');
+            if (sidebarBody) {
+                new PerfectScrollbar(sidebarBody, {
+                    wheelPropagation: false,
+                    suppressScrollX: true
+                });
+            }
+        }
+
+        // Réinitialisation du formulaire à l'ouverture du modal
+        document.getElementById('trajetModal').addEventListener('show.bs.modal', function (event) {
+            if (!event.relatedTarget.hasAttribute('data-trajet-id')) {
+                document.getElementById('trajetForm').reset();
+                document.getElementById('trajetId').value = '';
+                document.getElementById('trajetModalTitle').textContent = 'Nouveau Trajet';
+            }
+        });
+    });
+
+    // Gestion des erreurs globales
+    window.addEventListener('error', function (event) {
+        console.error('Erreur globale:', event.error);
+        alert('Une erreur est survenue. Veuillez réessayer.');
+    });
+</script>
 
 {% endblock %}
