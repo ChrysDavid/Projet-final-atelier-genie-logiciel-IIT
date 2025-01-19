@@ -1,14 +1,30 @@
 from django.shortcuts import render
 
 # Create your views here.
-def index_page(request):
-    return render(request, 'index.html')
 
 def user_page(request):
-    return render(request, 'tables-datatables-basic.html')
-
-def email_page(request):
-    return render(request, 'app-email.html')
+    return render(request, 'user.html')
 
 def logistics_fleet(request):
-    return render(request, 'app-logistics-fleet.html')
+    return render(request, 'trajet.html')
+
+# def vehicule_page(request):
+#     return render(request, 'vehicule.html')
+
+def maintenance_page(request):
+    return render(request, 'maintenance.html')
+
+def carburant_page(request):
+    return render(request, 'carburant.html')
+
+def raport_page(request):
+    return render(request, 'raport.html')
+
+def account_page(request):
+    return render(request, 'account.html')
+
+def map_page(request):
+    return render(request, 'map.html')
+
+def forgot_password(request):
+    return render(request, 'forgot-password.html')

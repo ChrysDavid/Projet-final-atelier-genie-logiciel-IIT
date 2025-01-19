@@ -38,6 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'account',
+    'dashboard',
+    'pages',
+    'usermanager',
+    'vehiculemanager',
 ]
 
 MIDDLEWARE = [
@@ -55,7 +60,7 @@ ROOT_URLCONF = 'ges_auto.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['templates'],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -116,16 +121,34 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
+# In settings.py - you already have most of this, just verify
 STATIC_URL = 'static/'
-
-MEDIA_URL = '/media/'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR,'static')
-  ]
-STATIC_ROOT= os.path.join(BASE_DIR, '../static_cdn')
-MEDIA_ROOT= os.path.join(BASE_DIR, '../media_cdn')
+    os.path.join(BASE_DIR, 'static')
+]
+STATIC_ROOT = os.path.join(BASE_DIR, '../static_cdn')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, '../media_cdn')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# In settings.py
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'login'
+LOGIN_URL = 'login'
+
+AUTH_USER_MODEL = 'account.CustomUser'
+
+
+
+# Adresse e-mail utilisée pour envoyer les emails de réinitialisation
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your_email@gmail.com'  # Remplacez par votre adresse e-mail
+EMAIL_HOST_PASSWORD = 'your_email_password'  # Remplacez par votre mot de passe ou token d'application
+DEFAULT_FROM_EMAIL = 'webmaster@localhost'

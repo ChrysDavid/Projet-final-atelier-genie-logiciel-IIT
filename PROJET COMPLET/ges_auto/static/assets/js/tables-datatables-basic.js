@@ -1,309 +1,207 @@
-// script.js
-document.addEventListener('DOMContentLoaded', function () {
-  // Sample data
-  const data = [
-      { id: 1, name: "John Doe", email: "john@example.com", date: "2024-01-01", salary: 50000, status: "active" },
-      { id: 2, name: "Jane Smith", email: "jane@example.com", date: "2024-01-02", salary: 60000, status: "inactive" },
-      { id: 3, name: "Bob Wilson", email: "bob@example.com", date: "2024-01-03", salary: 55000, status: "pending" }
-  ];
+document.addEventListener('DOMContentLoaded', function() {
+    // Éléments DOM
+    const userModal = new bootstrap.Modal(document.getElementById('userModal'));
+    const userForm = document.getElementById('userForm');
+    const searchInput = document.getElementById('searchInput');
+    const entriesSelect = document.getElementById('entriesSelect');
+    const table = document.querySelector('.table');
+    const tableBody = table.querySelector('tbody');
 
-  let currentPage = 1;
-  let entriesPerPage = 10;
-  let filteredData = [...data];
+    // État global
+    let currentUserId = null;
+    let users = [];
 
-  // DOM Elements
-  const tableBody = document.getElementById('tableBody');
-  const searchInput = document.getElementById('searchInput');
-  const entriesSelect = document.getElementById('entriesSelect');
-  const addNewBtn = document.getElementById('addNewBtn');
-  const modal = document.getElementById('recordModal');
-  const recordForm = document.getElementById('recordForm');
-  const closeBtn = document.querySelector('.close-btn');
-  const cancelBtn = document.getElementById('cancelBtn');
+    // Fonction pour charger les données initiales
+    function loadInitialData() {
+        const rows = tableBody.querySelectorAll('tr');
+        users = Array.from(rows).map(row => ({
+            id: row.querySelector('.edit-btn')?.dataset.id,
+            matricule: row.cells[0].textContent,
+            nom: row.cells[1].textContent,
+            prenom: row.cells[2].textContent,
+            email: row.cells[3].textContent,
+            fonction: row.cells[4].textContent,
+            adresse: row.cells[5].textContent,
+            date_embauche: row.cells[6].textContent,
+            dernier_connexion: row.cells[7].textContent
+        }));
+    }
 
-  // Render table data
-  function renderTable() {
-      const start = (currentPage - 1) * entriesPerPage;
-      const end = start + entriesPerPage;
-      const paginatedData = filteredData.slice(start, end);
+    // Fonction de recherche
+    function handleSearch(searchTerm) {
+        const filteredUsers = users.filter(user => 
+            Object.values(user).some(value => 
+                value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+            )
+        );
+        renderUsers(filteredUsers);
+    }
 
-      tableBody.innerHTML = '';
-      paginatedData.forEach(item => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-          <td>${item.name}</td>
-          <td>${item.email}</td>
-          <td>${formatDate(item.date)}</td>
-          <td>$${item.salary.toLocaleString()}</td>
-          <td><span class="status-badge status-${item.status}">${item.status}</span></td>
-          <td>
-              <button class="btn btn-edit" data-id="${item.id}">Edit</button>
-              <button class="btn btn-delete" data-id="${item.id}">Delete</button>
-          </td>
-      `;
-          tableBody.appendChild(row);
-      });
+    // Fonction de tri
+    function handleSort(column, direction) {
+        const sortedUsers = [...users].sort((a, b) => {
+            if (direction === 'asc') {
+                return a[column] > b[column] ? 1 : -1;
+            }
+            return a[column] < b[column] ? 1 : -1;
+        });
+        renderUsers(sortedUsers);
+    }
 
-      updatePagination();
-      updateEntriesInfo();
-  }
+    // Fonction pour afficher les utilisateurs
+    function renderUsers(usersToRender) {
+        tableBody.innerHTML = usersToRender.map(user => `
+            <tr>
+                <td>${user.matricule}</td>
+                <td>${user.nom}</td>
+                <td>${user.prenom}</td>
+                <td>${user.email}</td>
+                <td>${user.fonction || '-'}</td>
+                <td>${user.adresse || '-'}</td>
+                <td>${user.date_embauche || '-'}</td>
+                <td>${user.dernier_connexion || '-'}</td>
+                <td>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-info edit-btn" data-id="${user.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="${user.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="9" class="text-center">Aucun utilisateur trouvé.</td></tr>';
+        
+        // Réattacher les événements après le rendu
+        attachEventListeners();
+    }
 
-  // Update pagination
-  function updatePagination() {
-      const totalPages = Math.ceil(filteredData.length / entriesPerPage);
-      const pageNumbers = document.getElementById('pageNumbers');
-      pageNumbers.innerHTML = '';
+    // Gestion de l'ajout/modification d'utilisateur
+    async function handleUserSubmit(e) {
+        e.preventDefault();
+        const formData = new FormData(userForm);
+        const url = currentUserId 
+            ? `/utilisateurs/update/${currentUserId}/`
+            : '/utilisateurs/create/';
 
-      for (let i = 1; i <= totalPages; i++) {
-          const button = document.createElement('button');
-          button.classList.add('btn-page');
-          if (i === currentPage) button.classList.add('active');
-          button.textContent = i;
-          button.addEventListener('click', () => {
-              currentPage = i;
-              renderTable();
-          });
-          pageNumbers.appendChild(button);
-      }
-  }
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: JSON.stringify(Object.fromEntries(formData)),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
 
-  // Update entries info
-  function updateEntriesInfo() {
-      const start = (currentPage - 1) * entriesPerPage + 1;
-      const end = Math.min(start + entriesPerPage - 1, filteredData.length);
-      document.getElementById('startEntry').textContent = start;
-      document.getElementById('endEntry').textContent = end;
-      document.getElementById('totalEntries').textContent = filteredData.length;
-  }
+            if (response.ok) {
+                const result = await response.json();
+                userModal.hide();
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert(error.message);
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue');
+        }
+    }
 
-  // Event Listeners
-  searchInput.addEventListener('input', function (e) {
-      const searchTerm = e.target.value.toLowerCase();
-      filteredData = data.filter(item =>
-          item.name.toLowerCase().includes(searchTerm) ||
-          item.email.toLowerCase().includes(searchTerm)
-      );
-      currentPage = 1;
-      renderTable();
-  });
+    // Gestion de la suppression
+    async function handleDelete(userId) {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return;
 
-  entriesSelect.addEventListener('change', function (e) {
-      entriesPerPage = parseInt(e.target.value);
-      currentPage = 1;
-      renderTable();
-  });
+        try {
+            const response = await fetch(`/utilisateurs/delete/${userId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
 
-  addNewBtn.addEventListener('click', () => {
-      modal.style.display = 'block';
-  });
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert(error.message);
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue');
+        }
+    }
 
-  closeBtn.addEventListener('click', () => {
-      modal.style.display = 'none';
-  });
+    // Gestion de l'export
+    function handleExport(format) {
+        if (['csv', 'excel', 'pdf'].includes(format)) {
+            window.location.href = `/utilisateurs/export/${format}/`;
+        } else if (format === 'print') {
+            window.print();
+        }
+    }
 
-  cancelBtn.addEventListener('click', () => {
-      modal.style.display = 'none';
-  });
+    // Attacher les écouteurs d'événements
+    function attachEventListeners() {
+        // Boutons d'édition
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentUserId = btn.dataset.id;
+                const row = btn.closest('tr');
+                const cells = row.cells;
 
-  recordForm.addEventListener('submit', function (e) {
-      e.preventDefault();
-      const newRecord = {
-          id: data.length + 1,
-          name: document.getElementById('name').value,
-          email: document.getElementById('email').value,
-          date: document.getElementById('date').value,
-          salary: parseInt(document.getElementById('salary').value),
-          status: document.getElementById('status').value
-      };
-      data.push(newRecord);
-      filteredData = [...data];
-      modal.style.display = 'none';
-      recordForm.reset();
-      renderTable();
-  });
+                userForm.querySelector('[name="matricule"]').value = cells[0].textContent;
+                userForm.querySelector('[name="nom"]').value = cells[1].textContent;
+                userForm.querySelector('[name="prenom"]').value = cells[2].textContent;
+                userForm.querySelector('[name="email"]').value = cells[3].textContent;
+                userForm.querySelector('[name="fonction"]').value = cells[4].textContent;
+                userForm.querySelector('[name="adresse"]').value = cells[5].textContent;
+                userForm.querySelector('[name="date_embauche"]').value = cells[6].textContent;
 
-  // Delete record
-  tableBody.addEventListener('click', function (e) {
-      if (e.target.classList.contains('btn-delete')) {
-          const id = parseInt(e.target.dataset.id);
-          const index = data.findIndex(item => item.id === id);
-          if (index !== -1) {
-              if (confirm('Are you sure you want to delete this record?')) {
-                  data.splice(index, 1);
-                  filteredData = [...data];
-                  renderTable();
-              }
-          }
-      }
-  });
+                document.getElementById('modalTitle').textContent = 'Modifier l\'utilisateur';
+                userModal.show();
+            });
+        });
 
-  // Edit record
-  tableBody.addEventListener('click', function (e) {
-      if (e.target.classList.contains('btn-edit')) {
-          const id = parseInt(e.target.dataset.id);
-          const record = data.find(item => item.id === id);
-          if (record) {
-              // Populate form
-              document.getElementById('name').value = record.name;
-              document.getElementById('email').value = record.email;
-              document.getElementById('date').value = record.date;
-              document.getElementById('salary').value = record.salary;
-              document.getElementById('status').value = record.status;
+        // Boutons de suppression
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleDelete(btn.dataset.id));
+        });
+    }
 
-              // Change form mode to edit
-              recordForm.dataset.mode = 'edit';
-              recordForm.dataset.editId = id;
+    // Initialisation
+    loadInitialData();
+    attachEventListeners();
 
-              // Show modal
-              modal.style.display = 'block';
-          }
-      }
-  });
+    // Écouteurs d'événements globaux
+    searchInput.addEventListener('input', e => handleSearch(e.target.value));
+    entriesSelect.addEventListener('change', e => {
+        // Implémenter la pagination côté client si nécessaire
+        console.log('Entries per page:', e.target.value);
+    });
+    userForm.addEventListener('submit', handleUserSubmit);
+    document.getElementById('addNewBtn').addEventListener('click', () => {
+        currentUserId = null;
+        userForm.reset();
+        document.getElementById('modalTitle').textContent = 'Ajouter un utilisateur';
+        userModal.show();
+    });
 
-  // Export functionality
-  document.getElementById('exportBtn').addEventListener('click', function (e) {
-      const target = e.target.closest('li');
-      if (!target) return;
+    // Gestionnaire d'export
+    document.querySelectorAll('.dropdown-item[data-type]').forEach(item => {
+        item.addEventListener('click', () => handleExport(item.dataset.type));
+    });
 
-      const type = target.dataset.type;
-      switch (type) {
-          case 'csv':
-              exportToCSV();
-              break;
-          case 'excel':
-              exportToExcel();
-              break;
-          case 'pdf':
-              exportToPDF();
-              break;
-          case 'print':
-              printTable();
-              break;
-      }
-  });
-
-  // Export utilities
-  function exportToCSV() {
-      let csv = 'Name,Email,Date,Salary,Status\n';
-      filteredData.forEach(item => {
-          csv += `${item.name},${item.email},${item.date},${item.salary},${item.status}\n`;
-      });
-
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'table-export.csv';
-      a.click();
-      window.URL.revokeObjectURL(url);
-  }
-
-  function exportToExcel() {
-      let table = '<table>';
-      // Add header
-      table += '<tr><th>Name</th><th>Email</th><th>Date</th><th>Salary</th><th>Status</th></tr>';
-
-      // Add data
-      filteredData.forEach(item => {
-          table += `<tr>
-          <td>${item.name}</td>
-          <td>${item.email}</td>
-          <td>${item.date}</td>
-          <td>${item.salary}</td>
-          <td>${item.status}</td>
-      </tr>`;
-      });
-      table += '</table>';
-
-      const blob = new Blob([table], { type: 'application/vnd.ms-excel' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'table-export.xls';
-      a.click();
-      window.URL.revokeObjectURL(url);
-  }
-
-  function exportToPDF() {
-      // Note: In a real application, you'd want to use a proper PDF library
-      alert('PDF export would require a PDF generation library');
-  }
-
-  function printTable() {
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
-      <html>
-          <head>
-              <title>Print Table</title>
-              <style>
-                  table { border-collapse: collapse; width: 100%; }
-                  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                  th { background-color: #f5f5f5; }
-              </style>
-          </head>
-          <body>
-              <h2>Table Export</h2>
-              <table>
-                  <tr>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Date</th>
-                      <th>Salary</th>
-                      <th>Status</th>
-                  </tr>
-                  ${filteredData.map(item => `
-                      <tr>
-                          <td>${item.name}</td>
-                          <td>${item.email}</td>
-                          <td>${formatDate(item.date)}</td>
-                          <td>$${item.salary.toLocaleString()}</td>
-                          <td>${item.status}</td>
-                      </tr>
-                  `).join('')}
-              </table>
-          </body>
-      </html>
-  `);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
-  }
-
-  // Utility functions
-  function formatDate(dateString) {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-      });
-  }
-
-  // Previous page button
-  document.getElementById('prevPage').addEventListener('click', () => {
-      if (currentPage > 1) {
-          currentPage--;
-          renderTable();
-      }
-  });
-
-  // Next page button
-  document.getElementById('nextPage').addEventListener('click', () => {
-      const totalPages = Math.ceil(filteredData.length / entriesPerPage);
-      if (currentPage < totalPages) {
-          currentPage++;
-          renderTable();
-      }
-  });
-
-  // Close modal when clicking outside
-  window.addEventListener('click', (e) => {
-      if (e.target === modal) {
-          modal.style.display = 'none';
-      }
-  });
-
-  // Initialize table
-  renderTable();
+    // Gestionnaire de tri pour les en-têtes de colonnes
+    table.querySelectorAll('thead th').forEach((th, index) => {
+        if (index < table.querySelectorAll('thead th').length - 1) { // Exclure la colonne d'actions
+            th.style.cursor = 'pointer';
+            th.addEventListener('click', () => {
+                const currentDirection = th.dataset.direction === 'asc' ? 'desc' : 'asc';
+                th.dataset.direction = currentDirection;
+                handleSort(Object.keys(users[0])[index], currentDirection);
+            });
+        }
+    });
 });

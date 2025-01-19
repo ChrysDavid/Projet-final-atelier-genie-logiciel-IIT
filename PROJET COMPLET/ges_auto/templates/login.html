@@ -1,0 +1,99 @@
+{% extends 'bases/base2.html' %}
+{% load static %}
+
+{% block content %}
+<div class="authentication-wrapper authentication-cover">
+  <!-- Logo -->
+  <a href="#" class="app-brand auth-cover-brand gap-2">
+    <span class="app-brand-logo demo">
+      <span class="text-primary">
+        <svg width="25" viewBox="0 0 25 42" xmlns="http://www.w3.org/2000/svg">
+          <path d="M13.7918663,0.358365126 L3.39788168,7.44174259 C0.566865006,9.69408886 -0.379795268,12.4788597 0.557900856,15.7960551 C0.68998853,16.2305145 1.09562888,17.7872135 3.12357076,19.2293357 C3.8146334,19.7207684 5.32369333,20.3834223 7.65075054,21.2172976 L7.59773219,21.2525164 L2.63468769,24.5493413 C0.445452254,26.3002124 0.0884951797,28.5083815 1.56381646,31.1738486 C2.83770406,32.8170431 5.20850219,33.2640127 7.09180128,32.5391577 C8.347334,32.0559211 11.4559176,30.0011079 16.4175519,26.3747182 C18.0338572,24.4997857 18.6973423,22.4544883 18.4080071,20.2388261 C17.963753,17.5346866 16.1776345,15.5799961 13.0496516,14.3747546 L10.9194936,13.4715819 L18.6192054,7.984237 L13.7918663,0.358365126 Z" id="path-1" fill="currentColor" opacity="0.5"></path>
+          <path d="M5.47320593,6.00457225 C4.05321814,8.216144 4.36334763,10.0722806 6.40359441,11.5729822 C8.61520715,12.571656 10.0999176,13.2171421 10.8577257,13.5094407 L15.5088241,14.433041 L18.6192054,7.984237 C15.5364148,3.11535317 13.9273018,0.573395879 13.7918663,0.358365126 C13.5790555,0.511491653 10.8061687,2.3935607 5.47320593,6.00457225 Z" id="path-3" fill="currentColor"></path>
+        </svg>
+      </span>
+    </span>
+    <span class="app-brand-text demo text-heading fw-bold">Sneat</span>
+  </a>
+
+  <div class="authentication-inner row m-0">
+    <!-- Left Text -->
+    <div class="d-none d-lg-flex col-lg-7 col-xl-8 align-items-center p-5">
+      <div class="w-100 d-flex justify-content-center">
+        <img src="{% static 'assets/img/illustrations/boy-with-rocket-light.png' %}" class="img-fluid" alt="Login image"
+          width="700" />
+      </div>
+    </div>
+
+    <!-- Login -->
+    <div class="d-flex col-12 col-lg-5 col-xl-4 align-items-center authentication-bg p-sm-12 p-6">
+      <div class="w-px-400 mx-auto mt-sm-12 mt-8">
+        <h4 class="mb-1">Welcome to Sneat! 👋</h4>
+        <p class="mb-6">Please sign-in to your account and start the adventure</p>
+
+        <!-- Display Messages -->
+        {% if messages %}
+        <div>
+          {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}" role="alert">
+            {{ message }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Form Start -->
+        <form id="formAuthentication" class="mb-6" action="{% url 'login' %}" method="POST">
+          {% csrf_token %}
+          <div class="mb-6 form-control-validation">
+              <label for="{{ form.username.id_for_label }}" class="form-label">Username or Email</label>
+              {{ form.username }}
+          </div>
+          <div class="mb-6 form-control-validation">
+              <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+              {{ form.password }}
+          </div>
+          <div class="mb-6">
+              <div class="d-flex justify-content-between">
+                  <div class="form-check mb-0">
+                      <input class="form-check-input" type="checkbox" id="remember-me" name="remember" />
+                      <label class="form-check-label" for="remember-me">Remember Me</label>
+                  </div>
+                  <a href="#">
+                      <p class="mb-0">Forgot Password?</p>
+                  </a>
+              </div>
+          </div>
+          <button class="btn btn-primary d-grid w-100" type="submit">Sign in</button>
+      </form>
+
+        <p class="text-center">
+          <span>New on our platform?</span>
+          <a href="{% url 'register' %}">
+            <span>Create an account</span>
+          </a>
+        </p>
+
+        <div class="divider my-6">
+          <div class="divider-text">or</div>
+        </div>
+
+        <div class="d-flex justify-content-center">
+          <a href="#" class="btn btn-sm btn-icon rounded-circle btn-text-facebook me-1_5">
+            <i class="icon-base bx bxl-facebook-circle icon-20px"></i>
+          </a>
+          <a href="#" class="btn btn-sm btn-icon rounded-circle btn-text-twitter me-1_5">
+            <i class="icon-base bx bxl-twitter icon-20px"></i>
+          </a>
+          <a href="#" class="btn btn-sm btn-icon rounded-circle btn-text-github me-1_5">
+            <i class="icon-base bx bxl-github icon-20px"></i>
+          </a>
+          <a href="#" class="btn btn-sm btn-icon rounded-circle btn-text-google-plus">
+            <i class="icon-base bx bxl-google icon-20px"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
