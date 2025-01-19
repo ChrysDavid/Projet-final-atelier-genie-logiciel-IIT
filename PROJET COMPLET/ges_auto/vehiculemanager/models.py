@@ -34,3 +34,59 @@ class Vehicule(models.Model):
         verbose_name = "Véhicule"
         verbose_name_plural = "Véhicules"
         ordering = ['-date_enregistrement']
+
+
+
+
+class Maintenance(models.Model):
+    STATUS_CHOICES = [
+        ('Completed', 'Completed'),
+        ('Pending', 'Pending'),
+        ('In Progress', 'In Progress'),
+    ]
+
+    date_maintenance = models.DateField(verbose_name="Maintenance Date")
+    type = models.CharField(max_length=50, verbose_name="Type of Maintenance")
+    description = models.TextField(verbose_name="Description", blank=True)
+    cout = models.FloatField(verbose_name="Cost")
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, verbose_name="Status")
+    pieces_changees = models.TextField(verbose_name="Replaced Parts", blank=True)
+    date_prochaine_maintenance = models.DateField(null=True, blank=True, verbose_name="Next Maintenance Date")
+    vehicule = models.ForeignKey(Vehicule, on_delete=models.CASCADE, verbose_name="Vehicle")
+    date_enregistrement = models.DateTimeField(default=now, verbose_name="Date Recorded")
+    date_modification = models.DateTimeField(auto_now=True, verbose_name="Date Modified")
+
+    def __str__(self):
+        return f"Maintenance {self.type} for {self.vehicule.immatriculation} on {self.date_maintenance}"
+
+    class Meta:
+        verbose_name = "Maintenance"
+        verbose_name_plural = "Maintenances"
+        ordering = ['-date_maintenance']
+
+
+
+class Carburant(models.Model):
+    date_prise = models.DateField(verbose_name="Date Prise")
+    quantite = models.FloatField(verbose_name="Quantité (L)")
+    cout_unitaire = models.FloatField(null=True, blank=True, verbose_name="Coût Unitaire")
+    cout_total = models.FloatField(null=True, blank=True, verbose_name="Coût Total")
+    type_carburant = models.CharField(max_length=50, verbose_name="Type Carburant")
+    station = models.CharField(max_length=255, verbose_name="Station")
+    kilometrage_actuel = models.PositiveIntegerField(verbose_name="Kilométrage Actuel")
+    vehicule = models.ForeignKey(
+        Vehicule,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Véhicule"
+    )
+    date_enregistrement = models.DateTimeField(default=now, verbose_name="Date d'Enregistrement")
+    date_modification = models.DateTimeField(auto_now=True, verbose_name="Date de Modification")
+
+    def __str__(self):
+        return f"{self.type_carburant} - {self.quantite}L (Véhicule {self.vehicule.immatriculation})"
+
+    class Meta:
+        verbose_name = "Carburant"
+        verbose_name_plural = "Carburants"
+        ordering = ['-date_prise']

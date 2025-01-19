@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'pages',
     'usermanager',
     'vehiculemanager',
+    'rapportmanager',
 ]
 
 MIDDLEWARE = [

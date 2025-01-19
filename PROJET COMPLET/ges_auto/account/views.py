@@ -47,19 +47,19 @@ def login_view(request):
 
 
 
-def register_view(request):
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, 'Compte créé avec succès!')
-            return redirect('utilisateur:dashboard')
-        else:
-            messages.error(request, 'Erreur lors de la création du compte.')
-    else:
-        form = CustomUserCreationForm()
-    return render(request, 'register.html', {'form': form})
+# def register_view(request):
+#     if request.method == 'POST':
+#         form = CustomUserCreationForm(request.POST)
+#         if form.is_valid():
+#             user = form.save()
+#             login(request, user)
+#             messages.success(request, 'Compte créé avec succès!')
+#             return redirect('utilisateur:dashboard')
+#         else:
+#             messages.error(request, 'Erreur lors de la création du compte.')
+#     else:
+#         form = CustomUserCreationForm()
+#     return render(request, 'register.html', {'form': form})
 
 
 @login_required
@@ -82,3 +82,5 @@ def profile_view(request):
     return render(request, 'profile.html', {'form': form})
 
 
+def forgot_password(request):
+    return render(request, 'forgot-password.html')
