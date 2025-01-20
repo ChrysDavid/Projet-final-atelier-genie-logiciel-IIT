@@ -11,7 +11,8 @@
             <div class="d-flex gap-2">
                 <!-- Bouton Export -->
                 <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle" type="button" id="exportButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="exportButton"
+                        data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-download me-2"></i>Exporter
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="exportButton">
@@ -45,11 +46,12 @@
                 </div>
                 <form method="get" class="col-md-6">
                     <div class="input-group">
-                        <input type="text" name="search" class="form-control" value="{{ search_query }}" placeholder="Rechercher...">
+                        <input type="text" name="search" class="form-control" value="{{ search_query }}"
+                            placeholder="Rechercher...">
                         <button type="submit" class="btn btn-primary">Rechercher</button>
                     </div>
                 </form>
-                
+
             </div>
 
             <!-- Table des utilisateurs -->
@@ -81,10 +83,12 @@
                             <td>{{ user.dernier_connexion|date:"d/m/Y H:i"|default:"-" }}</td>
                             <td>
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-info edit-btn" data-id="{{ user.id }}" title="Modifier">
+                                    <button class="btn btn-sm btn-info edit-btn" data-id="{{ user.id }}"
+                                        title="Modifier">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-danger delete-btn" data-id="{{ user.id }}" title="Supprimer">
+                                    <button class="btn btn-sm btn-danger delete-btn" data-id="{{ user.id }}"
+                                        title="Supprimer">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -123,21 +127,22 @@
                             <li class="page-item active">
                                 <span class="page-link">{{ num }}</span>
                             </li>
-                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                            <li class="page-item">
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} <li
+                                class="page-item">
                                 <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                            </li>
-                            {% endif %}
-                            {% endfor %}
+                                </li>
+                                {% endif %}
+                                {% endfor %}
 
-                            {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivant</a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Dernier &raquo;</a>
-                            </li>
-                            {% endif %}
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivant</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Dernier
+                                        &raquo;</a>
+                                </li>
+                                {% endif %}
                         </ul>
                     </div>
                 </div>
@@ -199,5 +204,79 @@
 
 <!-- Scripts -->
 <script src="{% static 'assets/js/tables-datatables-basic.js' %}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Récupérer le formulaire
+        const userForm = document.getElementById('userForm');
+        const addNewBtn = document.getElementById('addNewBtn');
+        const userModal = new bootstrap.Modal(document.getElementById('userModal'));
+
+        // Gestionnaire pour le bouton Ajouter
+        addNewBtn.addEventListener('click', function () {
+            userForm.reset();
+            document.getElementById('modalTitle').textContent = 'Ajouter un utilisateur';
+            userModal.show();
+        });
+
+        // Gestionnaire de soumission du formulaire
+        userForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            // Récupérer les données du formulaire
+            const formData = {
+                matricule: userForm.querySelector('[name="matricule"]').value,
+                nom: userForm.querySelector('[name="nom"]').value,
+                prenom: userForm.querySelector('[name="prenom"]').value,
+                email: userForm.querySelector('[name="email"]').value,
+                fonction: userForm.querySelector('[name="fonction"]').value,
+                adresse: userForm.querySelector('[name="adresse"]').value,
+                date_embauche: userForm.querySelector('[name="date_embauche"]').value,
+            };
+
+            // Corriger l'URL ici
+            fetch('/utilisateurs/create/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(formData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Afficher le message de succès avec le mot de passe
+                        alert(`Utilisateur créé avec succès!\nMot de passe temporaire: ${data.temp_password}`);
+                        userModal.hide();
+                        // Recharger la page pour voir le nouvel utilisateur
+                        window.location.reload();
+                    } else {
+                        alert('Erreur: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    alert('Une erreur est survenue lors de la création de l\'utilisateur');
+                });
+        });
+
+        // Fonction pour récupérer le cookie CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
 
 {% endblock %}

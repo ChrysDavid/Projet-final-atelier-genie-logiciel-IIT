@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import user_passes_test
 from account.models import CustomUser
 from django.core.paginator import Paginator
 import csv
@@ -13,12 +14,17 @@ from reportlab.lib.pagesizes import letter
 from django.core.exceptions import ValidationError
 import json
 
+
+
 @login_required
 def list_users_view(request):
+    if not request.user.is_superuser:
+        utilisateurs = CustomUser.objects.filter(is_superuser=False)
+    else:
+        utilisateurs = CustomUser.objects.all()
+    
     search_query = request.GET.get('search', '')
-    utilisateurs = CustomUser.objects.filter(
-        nom__icontains=search_query
-    ).order_by('-date_enregistrement')
+    utilisateurs = utilisateurs.filter(nom__icontains=search_query).order_by('-date_enregistrement')
     
     paginator = Paginator(utilisateurs, 10)
     page_number = request.GET.get('page')
@@ -31,13 +37,22 @@ def list_users_view(request):
     })
 
 
+
+
+
 @login_required
+@user_passes_test(lambda u: u.is_superuser, login_url='login', redirect_field_name=None)
 @require_http_methods(["POST"])
 def create_user(request):
+
     try:
         data = json.loads(request.body) if request.body else request.POST
         
-        user = CustomUser.objects.create(
+        # Créer un mot de passe aléatoire
+        temp_password = CustomUser.objects.make_random_password()
+        
+        # Créer l'utilisateur avec les champs de base
+        user = CustomUser(
             matricule=data.get('matricule'),
             username=data.get('email'),  # Utiliser l'email comme nom d'utilisateur
             email=data.get('email'),
@@ -45,17 +60,17 @@ def create_user(request):
             prenom=data.get('prenom'),
             fonction=data.get('fonction'),
             adresse=data.get('adresse'),
-            date_embauche=data.get('date_embauche')
+            date_embauche=data.get('date_embauche'),
+            is_active=True,  # Activer l'utilisateur par défaut
         )
         
-        # Définir un mot de passe temporaire
-        temp_password = CustomUser.objects.make_random_password()
+        # Définir le mot de passe
         user.set_password(temp_password)
         user.save()
         
         return JsonResponse({
             'status': 'success',
-            'message': 'Utilisateur créé avec succès',
+            'message': f'Utilisateur créé avec succès. Mot de passe temporaire: {temp_password}',
             'temp_password': temp_password
         })
     except ValidationError as e:
@@ -68,6 +83,7 @@ def create_user(request):
             'status': 'error',
             'message': str(e)
         }, status=500)
+    
 
 @login_required
 @require_http_methods(["POST"])

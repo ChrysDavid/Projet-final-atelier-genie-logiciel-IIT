@@ -84,7 +84,10 @@ class Carburant(models.Model):
     date_modification = models.DateTimeField(auto_now=True, verbose_name="Date de Modification")
 
     def __str__(self):
-        return f"{self.type_carburant} - {self.quantite}L (Véhicule {self.vehicule.immatriculation})"
+        if self.vehicule:
+            return f"{self.type_carburant} - {self.quantite}L (Véhicule {self.vehicule.immatriculation})"
+        return f"{self.type_carburant} - {self.quantite}L (Aucun véhicule associé)"
+
 
     class Meta:
         verbose_name = "Carburant"
