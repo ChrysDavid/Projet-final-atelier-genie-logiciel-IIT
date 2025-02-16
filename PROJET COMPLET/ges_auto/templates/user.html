@@ -2,35 +2,40 @@
 {% load static %}
 
 {% block content %}
-
 <div class="container-xxl flex-grow-1 container-p-y">
-    <!-- Card principale -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Gestion des Utilisateurs</h5>
+            <h5 class="mb-0">Gestion des Employés</h5>
             <div class="d-flex gap-2">
-                <!-- Bouton Export -->
                 <div class="dropdown">
                     <button class="btn btn-secondary dropdown-toggle" type="button" id="exportButton"
                         data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-download me-2"></i>Exporter
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="exportButton">
-                        <li><a class="dropdown-item" href="#" data-type="csv">CSV</a></li>
-                        <li><a class="dropdown-item" href="#" data-type="excel">Excel</a></li>
-                        <li><a class="dropdown-item" href="#" data-type="pdf">PDF</a></li>
-                        <li><a class="dropdown-item" href="#" data-type="print">Imprimer</a></li>
+                        <li><a class="dropdown-item" href="{% url 'export_users' 'csv' %}">CSV</a></li>
+                        <li><a class="dropdown-item" href="{% url 'export_users' 'excel' %}">Excel</a></li>
+                        <li><a class="dropdown-item" href="{% url 'export_users' 'pdf' %}">PDF</a></li>
                     </ul>
                 </div>
-                <!-- Bouton Ajouter -->
-                <button type="button" class="btn btn-primary" id="addNewBtn">
-                    <i class="fas fa-plus me-2"></i>Ajouter un utilisateur
+                {% if user.role == 'SUPERUSER' or user.role == 'SECRETAIRE' %}
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">
+                    <i class="fas fa-plus me-2"></i>Ajouter un employé
                 </button>
+                {% endif %}
             </div>
         </div>
 
         <div class="card-body">
-            <!-- Barre de recherche et nombre d'entrées -->
             <div class="row mb-3">
                 <div class="col-md-6">
                     <div class="d-flex align-items-center">
@@ -47,56 +52,65 @@
                 <form method="get" class="col-md-6">
                     <div class="input-group">
                         <input type="text" name="search" class="form-control" value="{{ search_query }}"
-                            placeholder="Rechercher...">
+                            placeholder="Rechercher un employé...">
                         <button type="submit" class="btn btn-primary">Rechercher</button>
                     </div>
                 </form>
-
             </div>
 
-            <!-- Table des utilisateurs -->
             <div class="table-responsive">
                 <table class="table table-bordered table-hover">
                     <thead class="table-light">
                         <tr>
-                            <th>Matricule</th>
                             <th>Nom</th>
                             <th>Prénom</th>
                             <th>Email</th>
                             <th>Fonction</th>
+                            <th>Service</th>
+                            <th>Téléphone Pro</th>
                             <th>Adresse</th>
                             <th>Date d'embauche</th>
-                            <th>Dernière connexion</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for user in utilisateurs %}
                         <tr>
-                            <td>{{ user.matricule }}</td>
                             <td>{{ user.nom }}</td>
                             <td>{{ user.prenom }}</td>
                             <td>{{ user.email }}</td>
                             <td>{{ user.fonction|default:"-" }}</td>
-                            <td>{{ user.adresse|default:"-" }}</td>
+                            <td>{{ user.service|default:"-" }}</td>
+                            <td>{{ user.telephone_pro|default:"-" }}</td>
+                            <td>
+                                {% if user.adresse %}
+                                {{ user.adresse }}<br>
+                                {{ user.code_postal }} {{ user.ville }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
                             <td>{{ user.date_embauche|date:"d/m/Y"|default:"-" }}</td>
-                            <td>{{ user.dernier_connexion|date:"d/m/Y H:i"|default:"-" }}</td>
                             <td>
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-info edit-btn" data-id="{{ user.id }}"
-                                        title="Modifier">
+                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal"
+                                        data-bs-target="#editModal{{ user.id }}" title="Modifier">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-danger delete-btn" data-id="{{ user.id }}"
-                                        title="Supprimer">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <form method="post" action="{% url 'delete_user' user.id %}"
+                                        style="display: inline;"
+                                        onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet employé ?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Supprimer">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="9" class="text-center">Aucun utilisateur trouvé.</td>
+                            <td colspan="9" class="text-center">Aucun employé trouvé.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -107,7 +121,8 @@
             <div class="row mt-3">
                 <div class="col-sm-12 col-md-5">
                     <div class="dataTables_info">
-                        Affichage de {{ page_obj.start_index }} à {{ page_obj.end_index }} sur {{ page_obj.paginator.count }} entrées
+                        Affichage de {{ page_obj.start_index }} à {{ page_obj.end_index }} sur {{ page_obj.paginator.count }}
+                        entrées
                     </div>
                 </div>
                 <div class="col-sm-12 col-md-7">
@@ -115,10 +130,12 @@
                         <ul class="pagination justify-content-end">
                             {% if page_obj.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page=1">&laquo; Premier</a>
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">&laquo;
+                                    Premier</a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Précédent</a>
+                                <a class="page-link"
+                                    href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Précédent</a>
                             </li>
                             {% endif %}
 
@@ -127,22 +144,25 @@
                             <li class="page-item active">
                                 <span class="page-link">{{ num }}</span>
                             </li>
-                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} <li
-                                class="page-item">
-                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                                </li>
-                                {% endif %}
-                                {% endfor %}
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                    href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
 
-                                {% if page_obj.has_next %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivant</a>
-                                </li>
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Dernier
-                                        &raquo;</a>
-                                </li>
-                                {% endif %}
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                    href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Suivant</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link"
+                                    href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">Dernier
+                                    &raquo;</a>
+                            </li>
+                            {% endif %}
                         </ul>
                     </div>
                 </div>
@@ -150,21 +170,42 @@
         </div>
     </div>
 
-    <!-- Modal Ajouter/Modifier -->
+    <!-- Modal Ajouter -->
     <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">Ajouter un utilisateur</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="userForm">
+                <form method="post" action="{% url 'create_user' %}">
                     {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Ajouter un employé</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
                     <div class="modal-body">
                         <div class="row g-3">
+                            <!-- Informations professionnelles -->
                             <div class="col-12">
-                                <label class="form-label">Matricule</label>
-                                <input type="text" class="form-control" name="matricule" required>
+                                <h6 class="mb-3">Informations professionnelles</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Service</label>
+                                <input type="text" class="form-control" name="service">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Fonction</label>
+                                <input type="text" class="form-control" name="fonction">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Téléphone professionnel</label>
+                                <input type="tel" class="form-control" name="telephone_pro">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Date d'embauche</label>
+                                <input type="date" class="form-control" name="date_embauche">
+                            </div>
+
+                            <!-- Informations personnelles -->
+                            <div class="col-12">
+                                <h6 class="mb-3 mt-3">Informations personnelles</h6>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Nom</label>
@@ -174,21 +215,25 @@
                                 <label class="form-label">Prénom</label>
                                 <input type="text" class="form-control" name="prenom" required>
                             </div>
-                            <div class="col-12">
+                            <div class="col-md-6">
                                 <label class="form-label">Email</label>
                                 <input type="email" class="form-control" name="email" required>
                             </div>
-                            <div class="col-12">
-                                <label class="form-label">Fonction</label>
-                                <input type="text" class="form-control" name="fonction">
+                            <div class="col-md-6">
+                                <label class="form-label">Téléphone personnel</label>
+                                <input type="tel" class="form-control" name="telephone_perso">
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Adresse</label>
                                 <input type="text" class="form-control" name="adresse">
                             </div>
-                            <div class="col-12">
-                                <label class="form-label">Date d'embauche</label>
-                                <input type="date" class="form-control" name="date_embauche">
+                            <div class="col-md-6">
+                                <label class="form-label">Code postal</label>
+                                <input type="text" class="form-control" name="code_postal">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Ville</label>
+                                <input type="text" class="form-control" name="ville">
                             </div>
                         </div>
                     </div>
@@ -200,82 +245,102 @@
             </div>
         </div>
     </div>
-</div>
 
-<!-- Scripts -->
-<script src="{% static 'assets/js/tables-datatables-basic.js' %}"></script>
+    <!-- Modals de modification pour chaque utilisateur -->
+    {% for user in utilisateurs %}
+    <div class="modal fade" id="editModal{{ user.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form method="post" action="{% url 'update_user' user.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Modifier un employé</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <!-- Informations professionnelles -->
+                            <div class="col-12">
+                                <h6 class="mb-3">Informations professionnelles</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Service</label>
+                                <input type="text" class="form-control" name="service" value="{{ user.service }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Fonction</label>
+                                <input type="text" class="form-control" name="fonction" value="{{ user.fonction }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Téléphone professionnel</label>
+                                <input type="tel" class="form-control" name="telephone_pro" value="{{ user.telephone_pro }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Date d'embauche</label>
+                                <input type="date" class="form-control" name="date_embauche" value="{{ user.date_embauche|date:'Y-m-d' }}">
+                            </div>
+
+                            <!-- Informations personnelles -->
+                            <div class="col-12">
+                                <h6 class="mb-3 mt-3">Informations personnelles</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nom</label>
+                                <input type="text" class="form-control" name="nom" value="{{ user.nom }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Prénom</label>
+                                <input type="text" class="form-control" name="prenom" value="{{ user.prenom }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Téléphone personnel</label>
+                                <input type="tel" class="form-control" name="telephone_perso" value="{{ user.telephone_perso }}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Adresse</label>
+                                <input type="text" class="form-control" name="adresse" value="{{ user.adresse }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Code postal</label>
+                                <input type="text" class="form-control" name="code_postal" value="{{ user.code_postal }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Ville</label>
+                                <input type="text" class="form-control" name="ville" value="{{ user.ville }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Récupérer le formulaire
-        const userForm = document.getElementById('userForm');
-        const addNewBtn = document.getElementById('addNewBtn');
-        const userModal = new bootstrap.Modal(document.getElementById('userModal'));
-
-        // Gestionnaire pour le bouton Ajouter
-        addNewBtn.addEventListener('click', function () {
-            userForm.reset();
-            document.getElementById('modalTitle').textContent = 'Ajouter un utilisateur';
-            userModal.show();
+        // Gestion du nombre d'entrées par page
+        document.getElementById('entriesSelect').addEventListener('change', function() {
+            const searchParams = new URLSearchParams(window.location.search);
+            searchParams.set('entries', this.value);
+            window.location.search = searchParams.toString();
         });
 
-        // Gestionnaire de soumission du formulaire
-        userForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            // Récupérer les données du formulaire
-            const formData = {
-                matricule: userForm.querySelector('[name="matricule"]').value,
-                nom: userForm.querySelector('[name="nom"]').value,
-                prenom: userForm.querySelector('[name="prenom"]').value,
-                email: userForm.querySelector('[name="email"]').value,
-                fonction: userForm.querySelector('[name="fonction"]').value,
-                adresse: userForm.querySelector('[name="adresse"]').value,
-                date_embauche: userForm.querySelector('[name="date_embauche"]').value,
-            };
-
-            // Corriger l'URL ici
-            fetch('/utilisateurs/create/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify(formData)
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Afficher le message de succès avec le mot de passe
-                        alert(`Utilisateur créé avec succès!\nMot de passe temporaire: ${data.temp_password}`);
-                        userModal.hide();
-                        // Recharger la page pour voir le nouvel utilisateur
-                        window.location.reload();
-                    } else {
-                        alert('Erreur: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Erreur:', error);
-                    alert('Une erreur est survenue lors de la création de l\'utilisateur');
-                });
+        // Fermer automatiquement les alertes après 5 secondes
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            setTimeout(function() {
+                alert.remove();
+            }, 5000);
         });
-
-        // Fonction pour récupérer le cookie CSRF
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
     });
 </script>
 
