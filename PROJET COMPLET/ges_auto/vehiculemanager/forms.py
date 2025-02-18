@@ -9,7 +9,7 @@ class VehiculeForm(forms.ModelForm):
         fields = [
             'immatriculation', 'marque', 'modele', 'annee', 'categorie',
             'status', 'date_acquisition', 'date_derniere_maintenance',
-            'kilometrage', 'image_url'
+            'kilometrage', 'image'
         ]
         widgets = {
             'date_acquisition': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
@@ -21,8 +21,9 @@ class VehiculeForm(forms.ModelForm):
             'categorie': forms.Select(attrs={'class': 'form-select'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
             'kilometrage': forms.NumberInput(attrs={'class': 'form-control'}),
-            'image_url': forms.URLInput(attrs={'class': 'form-control'}),
+            'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
+
 
 
 

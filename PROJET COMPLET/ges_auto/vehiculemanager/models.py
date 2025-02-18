@@ -23,7 +23,7 @@ class Vehicule(models.Model):
     date_acquisition = models.DateField(null=True, blank=True, verbose_name="Date d'acquisition")
     date_derniere_maintenance = models.DateField(null=True, blank=True, verbose_name="Date de dernière maintenance")
     kilometrage = models.PositiveIntegerField(null=True, blank=True, verbose_name="Kilométrage")
-    image_url = models.URLField(max_length=255, null=True, blank=True, verbose_name="URL de l'image")
+    image = models.ImageField(upload_to='vehicules/', null=True, blank=True, verbose_name="Image du véhicule")
     date_enregistrement = models.DateTimeField(default=now, verbose_name="Date d'enregistrement")
     date_modification = models.DateTimeField(auto_now=True, verbose_name="Date de modification")
 
